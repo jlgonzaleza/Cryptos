@@ -4,8 +4,10 @@
  */
 package co.softluciona.certificate.verify.revocation.crl;
 
+import co.softluciona.certificate.verify.exception.NotValidateException;
 import co.softluciona.certificate.verify.exception.VerifyCertificateException;
 import co.softluciona.utils.Utilities;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -25,14 +27,14 @@ public class CrlVerify {
     private static String pathCrl;
 
     
-    public static void verifyRevocation(X509Certificate cert, Calendar calendar,String pathCrl_, String commonName) throws VerifyCertificateException{
+    public static void verifyRevocation(X509Certificate cert, Calendar calendar,String pathCrl_, String commonName) throws VerifyCertificateException,NotValidateException{
         pathCrl = pathCrl_;
        X509CRL crl =loadCrl(commonName);
        verifyCrlExpireDate(crl, calendar);
        verifyCertificateAgainsCrl(crl, cert, calendar);
     }
     
-    private static X509CRL loadCrl(String commonName) throws VerifyCertificateException {
+    private static X509CRL loadCrl(String commonName) throws NotValidateException {
         File crlFile = new File(pathCrl);
         File[] crls;
         if (pathCrl.endsWith(CRL_EXT)) {
@@ -43,7 +45,7 @@ public class CrlVerify {
         }
 
         if (crls == null || crls.length == 0) {
-            throw new VerifyCertificateException(VerifyCertificateException.getMessage("no.crl.files.found") + " " + pathCrl);
+            throw new NotValidateException(NotValidateException.getMessage("no.crl.files.found") + " " + pathCrl);
         }
 
         for (File crl : crls) {
@@ -52,7 +54,7 @@ public class CrlVerify {
                 try {
                     fis = new FileInputStream(crl);
                 } catch (FileNotFoundException ex) {
-                    throw new VerifyCertificateException(VerifyCertificateException.getMessage("file.not.found") + " " + crl.getAbsolutePath());
+                    throw new NotValidateException(NotValidateException.getMessage("file.not.found") + " " + crl.getAbsolutePath());
                 }
                 // CRL creation
                 X509CRL crlAux = null;
@@ -73,12 +75,12 @@ public class CrlVerify {
                 }
             }
         }
-        throw new VerifyCertificateException(VerifyCertificateException.getMessage("crl.not.found"));
+        throw new NotValidateException(NotValidateException.getMessage("crl.not.found"));
     }
 
-    private static void verifyCrlExpireDate(X509CRL crl, Calendar calendar) throws VerifyCertificateException {
+    private static void verifyCrlExpireDate(X509CRL crl, Calendar calendar) throws NotValidateException {
         if (crl.getNextUpdate().compareTo(calendar.getTime()) <= 0) {
-            throw new VerifyCertificateException(VerifyCertificateException.getMessage("crl.expired")+ Utilities.formatDate(crl.getNextUpdate()));
+            throw new NotValidateException(NotValidateException.getMessage("crl.expired")+ Utilities.formatDate(crl.getNextUpdate()));
         }
     }
 

@@ -1,6 +1,8 @@
 package co.softluciona.certificate.verify.revocation.ocsp;
 
+import co.softluciona.certificate.verify.exception.NotValidateException;
 import co.softluciona.certificate.verify.exception.VerifyCertificateException;
+
 import java.io.IOException;
 import java.security.NoSuchProviderException;
 import java.security.cert.X509Certificate;
@@ -172,7 +174,7 @@ public class OcspClient
 	 * 		inicializando los atributos de la clase
 	 */
 	public OcspClient(X509Certificate certToVerify, X509Certificate issuerCert, String ocspServer) 
-			throws VerifyCertificateException
+			throws NotValidateException
 	{
 		ocspUtils = new OcspUtils();
 		this.ocspServer = ocspServer;
@@ -300,14 +302,14 @@ public class OcspClient
 	 * @throws OcspException Se genera una excepci�n de este tipo cuando se produzca 
 	 * 			cualquier excepci�n en el proceso
 	 */
-	public OcspResponse ocspRequest() throws VerifyCertificateException
+	public OcspResponse ocspRequest() throws NotValidateException
 	{
 		// Se obtiene la petici�n OCSP
 		request = ocspUtils.generateOcspRequest(certToVerify, issuerCert);
 		
 		if(ocspServer == null)
 		{
-                    throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.url.error"));
+                    throw new NotValidateException(NotValidateException.getMessage("oscp.url.error"));
 			// Se obtiene la URL del servidor OCSP al que se le enviar� la petici�n
 		}
 		
@@ -332,7 +334,7 @@ public class OcspClient
 	 * @throws OcspException	Se lanza una excepci�n de este tipo si ocurre alg�n error
 	 * 				durante la verificaci�n de la respuesta OCSP
 	 */
-	public OcspResponse verifyOcspResponse() throws VerifyCertificateException
+	public OcspResponse verifyOcspResponse() throws NotValidateException
 	{
 		// Se procesa la respuesta que se encuentra almacenada en el atributo de
 		// la clase y se devuelve el mensaje obtenido

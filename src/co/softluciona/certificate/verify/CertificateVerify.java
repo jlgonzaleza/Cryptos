@@ -4,6 +4,7 @@
  */
 package co.softluciona.certificate.verify;
 
+import co.softluciona.certificate.verify.exception.NotValidateException;
 import co.softluciona.certificate.verify.exception.VerifyCertificateException;
 import co.softluciona.certificate.CertificateInfo;
 import co.softluciona.certificate.verify.revocation.RevocationProperties;
@@ -12,6 +13,7 @@ import co.softluciona.certificate.verify.revocation.crl.CrlVerify;
 import co.softluciona.certificate.verify.revocation.ocsp.OcspClient;
 import co.softluciona.certificate.verify.revocation.ocsp.OcspResponse;
 import co.softluciona.utils.Utilities;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -52,21 +54,25 @@ public abstract class CertificateVerify {
         return this.certInfo;
     }
 
-    public final CertificateInfo getVerifyAllCertificate() throws VerifyCertificateException {
+    public final CertificateInfo getVerifyAllCertificate() throws VerifyCertificateException,NotValidateException {
         verifyExpiredDate();
         X509Certificate issuer = verifyTrust();
         verifyRevocation(issuer);
         return certInfo;
     }
 
-    public final X509Certificate verifyTrust() throws VerifyCertificateException {
+    public final X509Certificate verifyTrust() throws VerifyCertificateException,NotValidateException {
         return loadCA(this.certInfo.getInfoIssuer().get("CN"));
     }
 
-    public final void verifyRevocation(X509Certificate issuer) throws VerifyCertificateException {
+    public final void verifyRevocation(X509Certificate issuer) throws VerifyCertificateException,NotValidateException {
         if (revocation.getType().equals(RevocationType.CRL)) {
             CrlVerify.verifyRevocation(this.certInfo.getCertificateX509(), revocation.getDateToVerify(), revocation.getPathCrl(), this.certInfo.getInfoIssuer().get("CN"));
         } else if (revocation.getType().equals(RevocationType.OCSP)) {
+        	if(issuer == null){
+        		throw new NotValidateException(NotValidateException.getMessage("no.issuer.ocsp"));
+
+        	}
             ocspVerify(this.certInfo.getCertificateX509(), issuer);
         }
     }
@@ -86,10 +92,9 @@ public abstract class CertificateVerify {
         }
     }
 
-    private X509Certificate loadCA(String commonName) throws VerifyCertificateException {
+    private X509Certificate loadCA(String commonName) throws VerifyCertificateException,NotValidateException {
         caKeystore = loadCacertsKeyStore(revocation.getPathKeystore(), revocation.getStreamKeyStore());
             
-
         try {
             Enumeration<String> localEnumeration = caKeystore.aliases();
             while (localEnumeration.hasMoreElements()) {
@@ -111,14 +116,14 @@ public abstract class CertificateVerify {
                 }
             }
         } catch (Exception e) {
-            throw new VerifyCertificateException(VerifyCertificateException.getMessage("keystore.read") + e.getMessage());
+            throw new NotValidateException(NotValidateException.getMessage("keystore.read") + e.getMessage());
         }
 
         //No coincide las CA locales con el certificado
         throw new VerifyCertificateException(VerifyCertificateException.getMessage("no.trust.certificate"));
     }
 
-    private void ocspVerify(X509Certificate cert, X509Certificate issuer) throws VerifyCertificateException {
+    private void ocspVerify(X509Certificate cert, X509Certificate issuer) throws VerifyCertificateException,NotValidateException {
         OcspClient ocspClient;
         String server = this.revocation.getOcspServer();
         if (server == null || server.isEmpty()) {
@@ -155,7 +160,7 @@ public abstract class CertificateVerify {
 //        }
     }
 
-    private KeyStore loadCacertsKeyStore(String keyStorePath, InputStream keyStoreStream) throws VerifyCertificateException {
+    private KeyStore loadCacertsKeyStore(String keyStorePath, InputStream keyStoreStream) throws NotValidateException {
         File file = null;
         InputStream fin = null;
         boolean propio = false;
@@ -172,7 +177,7 @@ public abstract class CertificateVerify {
             try {
                 fin = new FileInputStream(file);
             } catch (FileNotFoundException ex) {
-                throw new VerifyCertificateException(VerifyCertificateException.getMessage("no.keystore.valid"));
+                throw new NotValidateException(NotValidateException.getMessage("no.keystore.valid"));
 
             }
         }
@@ -181,7 +186,7 @@ public abstract class CertificateVerify {
         try {
             k = KeyStore.getInstance("JKS");
         } catch (KeyStoreException ex) {
-            throw new VerifyCertificateException(VerifyCertificateException.getMessage("no.keystore.jks.found"));
+            throw new NotValidateException(NotValidateException.getMessage("no.keystore.jks.found"));
 
         }
         String password;
@@ -193,14 +198,14 @@ public abstract class CertificateVerify {
         try {
             k.load(fin, password.toCharArray());
         } catch (NoSuchAlgorithmException e) {
-            throw new VerifyCertificateException(VerifyCertificateException.getMessage("no.trust.keystore.decode"));
+            throw new NotValidateException(NotValidateException.getMessage("no.trust.keystore.decode"));
         } catch (CertificateException e) {
-            throw new VerifyCertificateException(VerifyCertificateException.getMessage("no.trust.keystore.data"));
+            throw new NotValidateException(NotValidateException.getMessage("no.trust.keystore.data"));
         } catch (IOException e) {
             if (e.getMessage().toString().contains("password was incorrect")) {
-                throw new VerifyCertificateException(VerifyCertificateException.getMessage("no.trust.keystore.password"));
+                throw new NotValidateException(NotValidateException.getMessage("no.trust.keystore.password"));
             } else {
-                throw new VerifyCertificateException(VerifyCertificateException.getMessage("no.trust.keystore.right"));
+                throw new NotValidateException(NotValidateException.getMessage("no.trust.keystore.right"));
             }
         } finally {
             try {

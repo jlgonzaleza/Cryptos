@@ -1,6 +1,8 @@
 package co.softluciona.certificate.verify.revocation.ocsp;
 
+import co.softluciona.certificate.verify.exception.NotValidateException;
 import co.softluciona.certificate.verify.exception.VerifyCertificateException;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
@@ -125,7 +127,7 @@ public class OcspUtils {
      * inconveniente leyendo la informaci�n de los certificados
      */
     public OCSPReq generateOcspRequest(X509Certificate certToVerify,
-            X509Certificate issuerCert) throws VerifyCertificateException {
+            X509Certificate issuerCert) throws NotValidateException {
         try {
             // Se obtiene el identificador del certificado que se quiere verificar
             CertificateID id = new CertificateID(CertificateID.HASH_SHA1, issuerCert,
@@ -149,7 +151,7 @@ public class OcspUtils {
             return generator.generate();
         } catch (OCSPException e) {
             e.printStackTrace();
-            throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.cert.id"));
+            throw new NotValidateException(NotValidateException.getMessage("oscp.cert.id"));
         }
     }
 
@@ -165,7 +167,7 @@ public class OcspUtils {
      * inconveniente leyendo o escribiendo los datos de la solicitud OCSP
      */
     public OCSPResp generateHttpRequest(OCSPReq ocspRequest, String ocspServer)
-            throws VerifyCertificateException {
+            throws NotValidateException {
         try {
             OCSPResp ret = null;
 
@@ -191,7 +193,7 @@ public class OcspUtils {
             return ret;
         } catch (IOException e) {
             //throw new OcspException(ERROR_IO_SERVER, e);
-            throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.io.server"));
+            throw new NotValidateException(NotValidateException.getMessage("oscp.io.server"));
         }
     }
 
@@ -213,7 +215,7 @@ public class OcspUtils {
      */
     public OCSPResp generateHttpRequest(OCSPReq ocspRequest, String ocspServer, String proxyServer,
             String proxyPort, boolean proxyAuthentication, String proxyUser, String proxyPassword)
-            throws VerifyCertificateException {
+            throws NotValidateException {
         try {
             OCSPResp ret = null;
 
@@ -246,7 +248,7 @@ public class OcspUtils {
 
             return ret;
         } catch (IOException e) {
-            throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.io.server"));
+            throw new NotValidateException(NotValidateException.getMessage("oscp.io.server"));
             //throw new OcspException(ERROR_IO_SERVER, e);
         }
     }
@@ -263,7 +265,7 @@ public class OcspUtils {
      * alg�n error en el proceso
      */
     public OcspResponse processOcspResponse(OCSPResp response, X509Certificate certToVerify,
-            X509Certificate issuerCert) throws VerifyCertificateException {
+            X509Certificate issuerCert) throws NotValidateException {
         OcspResponse oscpResponse = new OcspResponse();
         String ret = null;
 
@@ -271,23 +273,23 @@ public class OcspUtils {
         switch (response.getStatus()) {
             case OCSPResponseStatus.MALFORMED_REQUEST:
                 //throw new OcspException(ERROR_MALFORMED_REQUEST);
-                throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.bad.request"));
+                throw new NotValidateException(NotValidateException.getMessage("oscp.bad.request"));
 
             case OCSPResponseStatus.INTERNAL_ERROR:
                 //throw new OcspException(ERROR_INTERNAL);
-                throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.internal.error"));
+                throw new NotValidateException(NotValidateException.getMessage("oscp.internal.error"));
 
             case OCSPResponseStatus.TRY_LATER:
                 //throw new OcspException(ERROR_TRY_LATER);
-                throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.try.later"));
+                throw new NotValidateException(NotValidateException.getMessage("oscp.try.later"));
 
             case OCSPResponseStatus.SIG_REQUIRED:
                 //throw new OcspException(ERROR_SIG_REQUIRED);
-                throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.sig.required"));
+                throw new NotValidateException(NotValidateException.getMessage("oscp.sig.required"));
 
             case OCSPResponseStatus.UNAUTHORIZED:
                 //throw new OcspException(ERROR_UNAUTHORIZED);
-                throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.unauthorized"));
+                throw new NotValidateException(NotValidateException.getMessage("oscp.unauthorized"));
 
             case OCSPResponseStatus.SUCCESSFUL:
                 try {
@@ -372,18 +374,18 @@ public class OcspUtils {
                                 }
                             }
                         } else {
-                             throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.wrong.id"));
+                             throw new NotValidateException(NotValidateException.getMessage("oscp.wrong.id"));
                             //throw new OcspException(ERROR_DIFFERENT_ID);
                         }
                     }
                 } catch (OCSPException ex) {
-                    throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.cert.id"), ex);
+                    throw new NotValidateException(NotValidateException.getMessage("oscp.cert.id"), ex);
                 } catch (NoSuchProviderException ex1) {
                     //throw new OcspException(ERROR_INVALID_PROVIDER, ex1);
-                     throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.provider"), ex1);
+                     throw new NotValidateException(NotValidateException.getMessage("oscp.provider"), ex1);
                 } catch (CertificateParsingException ex2) {
                     //throw new OcspException(ERROR_CERT_FILE, ex2);
-                    throw new VerifyCertificateException(VerifyCertificateException.getMessage("oscp.cert.error"), ex2);
+                    throw new NotValidateException(NotValidateException.getMessage("oscp.cert.error"), ex2);
                 }
                 break;
 

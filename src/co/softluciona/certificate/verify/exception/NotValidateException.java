@@ -1,16 +1,8 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package co.softluciona.certificate.verify.exception;
 
 import java.util.ResourceBundle;
 
-/**
- *
- * @author user
- */
-public class VerifyCertificateException extends Exception{
+public class NotValidateException extends Exception{
     /**
 	 * 
 	 */
@@ -21,13 +13,13 @@ public class VerifyCertificateException extends Exception{
        return  resourceBundle.getString(codeName);
     }
     
-     public VerifyCertificateException(String message){
+     public NotValidateException(String message){
         super(message);        
         
         
     }
     
-    public VerifyCertificateException(String message,Exception e){
+    public NotValidateException(String message,Exception e){
         super(message,e);
     }
     
